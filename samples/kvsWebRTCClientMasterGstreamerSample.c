@@ -145,6 +145,9 @@ PVOID sendGstreamerAudioVideo(PVOID args)
     switch (pSampleConfiguration->mediaType) {
         case SAMPLE_STREAMING_VIDEO_ONLY:
             if (pSampleConfiguration->useTestSrc) {
+            //filesrc location=/home/harut/hhh.mp4 ! qtdemux name=demux ! queue ! h264parse !
+              //video/x-h264,stream-format=avc,alignment=au ! kvssink name=sink stream-name="audio-video-file"
+             //access-key="YourAccessKeyId" secret-key="YourSecretAccessKey" streaming-type=offline demux. ! queue ! aacparse ! sink.
                 pipeline = gst_parse_launch(
                     "videotestsrc is-live=TRUE ! queue ! videoconvert ! video/x-raw,width=1280,height=720,framerate=30/1 ! "
                     "x264enc bframes=0 speed-preset=veryfast bitrate=512 byte-stream=TRUE tune=zerolatency ! "

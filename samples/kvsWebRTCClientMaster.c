@@ -1,9 +1,11 @@
 #include "Samples.h"
+#include <stdlib.h>
 
 extern PSampleConfiguration gSampleConfiguration;
 
 // #define VERBOSE
-
+char* path;
+int h264Len = 5000;
 INT32 main(INT32 argc, CHAR* argv[])
 {
     STATUS retStatus = STATUS_SUCCESS;
@@ -25,6 +27,15 @@ INT32 main(INT32 argc, CHAR* argv[])
         goto CleanUp;
     }
 
+    if(argc > 2) {
+        path = argv[2];
+        printf("File path  %s",path);
+    }
+
+    if(argc > 3) {
+        h264Len = argv[3];
+    }
+
     printf("[KVS Master] Created signaling channel %s\n", (argc > 1 ? argv[1] : SAMPLE_CHANNEL_NAME));
 
     if (pSampleConfiguration->enableFileLogging) {
@@ -44,21 +55,6 @@ INT32 main(INT32 argc, CHAR* argv[])
     pSampleConfiguration->mediaType = SAMPLE_STREAMING_AUDIO_VIDEO;
     printf("[KVS Master] Finished setting audio and video handlers\n");
 
-    // Check if the samples are present
-
-    retStatus = readFrameFromDisk(NULL, &frameSize, "./h264SampleFrames/frame-0001.h264");
-    if (retStatus != STATUS_SUCCESS) {
-        printf("[KVS Master] readFrameFromDisk(): operation returned status code: 0x%08x \n", retStatus);
-        goto CleanUp;
-    }
-    printf("[KVS Master] Checked sample video frame availability....available\n");
-
-    retStatus = readFrameFromDisk(NULL, &frameSize, "./opusSampleFrames/sample-001.opus");
-    if (retStatus != STATUS_SUCCESS) {
-        printf("[KVS Master] readFrameFromDisk(): operation returned status code: 0x%08x \n", retStatus);
-        goto CleanUp;
-    }
-    printf("[KVS Master] Checked sample audio frame availability....available\n");
 
     // Initialize KVS WebRTC. This must be done before anything else, and must only be done once.
     retStatus = initKvsWebRtc();
@@ -195,10 +191,10 @@ PVOID sendVideoPackets(PVOID args)
     frame.presentationTs = 0;
     startTime = GETTIME();
     lastFrameTime = startTime;
-
+    printf("Number of h264 frames is %d",h264Len);
     while (!ATOMIC_LOAD_BOOL(&pSampleConfiguration->appTerminateFlag)) {
         fileIndex = fileIndex % NUMBER_OF_H264_FRAME_FILES + 1;
-        snprintf(filePath, MAX_PATH_LEN, "./h264SampleFrames/frame-%04d.h264", fileIndex);
+        snprintf(filePath, MAX_PATH_LEN, "%s/h264/frame-%04d.h264",path, fileIndex);
 
         retStatus = readFrameFromDisk(NULL, &frameSize, filePath);
         if (retStatus != STATUS_SUCCESS) {
@@ -226,6 +222,7 @@ PVOID sendVideoPackets(PVOID args)
             printf("[KVS Master] readFrameFromDisk(): operation returned status code: 0x%08x \n", retStatus);
             goto CleanUp;
         }
+
 
         // based on bitrate of samples/h264SampleFrames/frame-*
         encoderStats.width = 640;
@@ -283,7 +280,7 @@ PVOID sendAudioPackets(PVOID args)
 
     while (!ATOMIC_LOAD_BOOL(&pSampleConfiguration->appTerminateFlag)) {
         fileIndex = fileIndex % NUMBER_OF_OPUS_FRAME_FILES + 1;
-        snprintf(filePath, MAX_PATH_LEN, "./opusSampleFrames/sample-%03d.opus", fileIndex);
+        snprintf(filePath, MAX_PATH_LEN, "%s/opus/sample-%03d.opus", path ,fileIndex);
 
         retStatus = readFrameFromDisk(NULL, &frameSize, filePath);
         if (retStatus != STATUS_SUCCESS) {
